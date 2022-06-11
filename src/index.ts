@@ -1,51 +1,7 @@
 import { URLSearchParams } from 'url';
 import fetch from 'cross-fetch';
-import { Book, BookChapter, Chapter, Character, Movie, Quote } from './models';
-
-async function retryLoop<T>(
-  pF: () => Promise<T>,
-  number: number,
-  failMessage: string,
-): Promise<T> {
-  let e: any;
-  for (let i = 0; i < number; i += 1) {
-    try {
-      // eslint-disable-next-line no-await-in-loop
-      const result = await pF();
-      if (result) {
-        return result;
-      }
-    } catch (err) {
-      e = err;
-      await new Promise(resolve => setTimeout(resolve, 50 ** (2 * i) + 50 ** (2*i) * Math.random()));
-    }
-  }
-  if (e) {
-    throw new Error(`${failMessage}: ${e.toString()}`);
-  }
-  throw new Error(failMessage);
-}
-
-export interface PaginationOptions {
-  pagination?: {
-    limit?: number;
-    page?: number;
-    offset?: number;
-  };
-}
-
-export interface SortOptions<T> {
-  sort?: {
-    direction: 'asc' | 'desc';
-    key: Extract<keyof T, string>;
-  };
-}
-
-export type ListQueryOptions<T> = PaginationOptions & SortOptions<T> & FilterOptions
-
-export interface FilterOptions {
-  additionalOptions?: string;
-}
+import { Book, BookChapter, Chapter, Character, ListQueryOptions, Movie, Quote } from './models';
+import { retryLoop } from './utils';
 
 export class LotrClient {
   public book = {
@@ -103,7 +59,7 @@ export class LotrClient {
       Authorization: `Bearer ${this.options.apiKey}`,
     };
     const query = this.constructQuery(options);
-    const fullPath = `https://the-one-api.dev/v2/${path}${query}`;
+    const fullPath = `https://the-one-api.dev/v2${path}${query}`;
     const rawData = await fetch(fullPath, {
       headers: headers,
     });
@@ -124,5 +80,4 @@ export class LotrClient {
     }
     return items[0];
   }
-
 }
