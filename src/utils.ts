@@ -12,7 +12,7 @@ export async function retryLoop<T>(
       }
     } catch (err) {
       e = err;
-      await new Promise(resolve => setTimeout(resolve, 50 ** (2 * i) + 50 ** (2*i) * Math.random()));
+      await new Promise(resolve => setTimeout(resolve, 50 * (2 ** i) + 50 * (2**i) * Math.random()));
     }
   }
   if (e) {
