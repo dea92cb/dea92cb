@@ -19,14 +19,15 @@ npm install --save 1885e1f
 The package needs to be configured with your account's API key, available in the [the-one-api.dev](https://the-one-api.dev) Dashboard.
 
 ```ts
-import LotrSDK from '1885e1f';
-import type {LotrClient, Book} from '1885e1f';
+import { LotrClient } from "1885e1f";
+import type {Book} from '1885e1f';
 
-const lotrClient: LotrClient = new LotrSDK({apiKey: 'MY_API_KEY'});
+const lotrClient: LotrClient = new LotrClient({ apiKey: "MY_API_KEY" });
 
-lotrClient.book.list()
-    .then((book): Book => console.log(book.id))
-    .catch(error => console.error(error));
+lotrClient.book
+    .list()
+    .then((books: Book[]) => {console.log(books)})
+    .catch((error) => console.error(error));
 ```
 
 ## Developer Setup
