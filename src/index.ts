@@ -25,27 +25,27 @@ export interface FilterOptions {
 
 export class LotrClient {
   public book = {
-    list: (options?: ListQueryOptions<Book>) => this.get<Book, Book[]>('/book', options),
-    get: (id: string) => this.get<Book, Book>(`/book/${id}`),
-    listChapters: (id: string, options: ListQueryOptions<Chapter>) => this.get<Chapter, Chapter[]>(`/book/${id}/chapter`, options),
+    list: (options?: ListQueryOptions<Book>) => this.getList<Book>('/book', options),
+    get: (id: string) => this.get<Book>(`/book/${id}`),
+    listChapters: (id: string, options: ListQueryOptions<Chapter>) => this.getList<Chapter>(`/book/${id}/chapter`, options),
   };
   public movie = {
-    list: (options?: ListQueryOptions<Movie>) => this.get<Movie, Movie[]>('/movie', options),
-    get: (id: string) => this.get<Movie, Movie>(`/movie/${id}`),
-    listQuotes: (id: string, options: ListQueryOptions<Quote>) => this.get<Quote, Quote[]>(`/movie/${id}/quotes`, options),
+    list: (options?: ListQueryOptions<Movie>) => this.getList<Movie>('/movie', options),
+    get: (id: string) => this.get<Movie>(`/movie/${id}`),
+    listQuotes: (id: string, options: ListQueryOptions<Quote>) => this.getList<Quote>(`/movie/${id}/quotes`, options),
   };
   public character = {
-    list: (options?: ListQueryOptions<Character>) => this.get<Character, Character[]>('/character', options),
-    get: (id: string) => this.get<Character, Character>(`/character/${id}`),
-    listQuotes: (id: string, options: ListQueryOptions<Quote>) => this.get<Quote, Quote[]>(`/character/${id}/quote`, options),
+    list: (options?: ListQueryOptions<Character>) => this.getList<Character>('/character', options),
+    get: (id: string) => this.get<Character>(`/character/${id}`),
+    listQuotes: (id: string, options: ListQueryOptions<Quote>) => this.getList<Quote>(`/character/${id}/quote`, options),
   };
   public quote = {
-    list: (options?: ListQueryOptions<Quote>) => this.get<Quote, Quote[]>('/quote', options),
-    get: (id: string) => this.get<Quote, Quote>(`/quote/${id}`),
+    list: (options?: ListQueryOptions<Quote>) => this.getList<Quote>('/quote', options),
+    get: (id: string) => this.get<Quote>(`/quote/${id}`),
   };
   public chapter = {
-    list: (options?: ListQueryOptions<Chapter>) => this.get<Chapter, Chapter[]>('/chapter', options),
-    get: (id: string) => this.get<Chapter, Chapter>(`/chapter/${id}`),
+    list: (options?: ListQueryOptions<Chapter>) => this.getList<Chapter>('/chapter', options),
+    get: (id: string) => this.get<Chapter>(`/chapter/${id}`),
   };
   constructor(private options: {apiKey: string}) {
   }
@@ -69,15 +69,30 @@ export class LotrClient {
     return qs;
   }
 
-  private async get<T, R>(path: string, options: ListQueryOptions<T> = {}): Promise<R> {
+  private async getList<T>(path: string, options: ListQueryOptions<T> = {}): Promise<T[]> {
     const headers = {
       Accept: 'application/json',
       Authorization: `Bearer ${this.options.apiKey}`,
     };
     const query = this.constructQuery(options);
-    const rawData = await fetch(`https://the-one-api.dev/v2/${path}${query}`, {
+    const fullPath = `https://the-one-api.dev/v2/${path}${query}`;
+    const rawData = await fetch(fullPath, {
       headers: headers,
     });
-    return rawData.json();
+    const rawResponse = await rawData.json();
+    const responseItems = rawResponse.docs;
+    if (!Array.isArray(responseItems)) {
+      throw new Error(`unexpected response from ${fullPath}: ${JSON.stringify(rawResponse)}. Expected docs array`);
+    }
+    return responseItems;
   }
+
+  private async get<T>(path: string): Promise<T> {
+    const items = await this.getList<T>(path);
+    if (items.length !== 1) {
+      throw new Error(`could not find single item with ID ${path}`);
+    }
+    return items[0];
+  }
+
 }
