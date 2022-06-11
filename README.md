@@ -29,6 +29,8 @@ lotrClient.book.list()
     .catch(error => console.error(error));
 ```
 
-## API Reference
+## Developer Setup
 
+Tests are executed with jest against the live API.
 
+To execute tests, configure a `LOTR_API_KEY` environment variable to be one provided by the dashboard instance.
