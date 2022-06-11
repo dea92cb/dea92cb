@@ -1,6 +1,30 @@
 import { URLSearchParams } from 'url';
 import fetch from 'cross-fetch';
-import { Book, Chapter, Character, Movie, Quote } from './models';
+import { Book, BookChapter, Chapter, Character, Movie, Quote } from './models';
+
+async function retryLoop<T>(
+  pF: () => Promise<T>,
+  number: number,
+  failMessage: string,
+): Promise<T> {
+  let e: any;
+  for (let i = 0; i < number; i += 1) {
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      const result = await pF();
+      if (result) {
+        return result;
+      }
+    } catch (err) {
+      e = err;
+      await new Promise(resolve => setTimeout(resolve, 50 ** (2 * i) + 50 ** (2*i) * Math.random()));
+    }
+  }
+  if (e) {
+    throw new Error(`${failMessage}: ${e.toString()}`);
+  }
+  throw new Error(failMessage);
+}
 
 export interface PaginationOptions {
   pagination?: {
@@ -27,17 +51,17 @@ export class LotrClient {
   public book = {
     list: (options?: ListQueryOptions<Book>) => this.getList<Book>('/book', options),
     get: (id: string) => this.get<Book>(`/book/${id}`),
-    listChapters: (id: string, options: ListQueryOptions<Chapter>) => this.getList<Chapter>(`/book/${id}/chapter`, options),
+    listChapters: (id: string, options?: ListQueryOptions<BookChapter>) => this.getList<BookChapter>(`/book/${id}/chapter`, options),
   };
   public movie = {
     list: (options?: ListQueryOptions<Movie>) => this.getList<Movie>('/movie', options),
     get: (id: string) => this.get<Movie>(`/movie/${id}`),
-    listQuotes: (id: string, options: ListQueryOptions<Quote>) => this.getList<Quote>(`/movie/${id}/quotes`, options),
+    listQuotes: (id: string, options?: ListQueryOptions<Quote>) => this.getList<Quote>(`/movie/${id}/quote`, options),
   };
   public character = {
     list: (options?: ListQueryOptions<Character>) => this.getList<Character>('/character', options),
     get: (id: string) => this.get<Character>(`/character/${id}`),
-    listQuotes: (id: string, options: ListQueryOptions<Quote>) => this.getList<Quote>(`/character/${id}/quote`, options),
+    listQuotes: (id: string, options?: ListQueryOptions<Quote>) => this.getList<Quote>(`/character/${id}/quote`, options),
   };
   public quote = {
     list: (options?: ListQueryOptions<Quote>) => this.getList<Quote>('/quote', options),
@@ -66,6 +90,10 @@ export class LotrClient {
       qs += '&' + options.additionalOptions;
     }
 
+    if (qs) {
+      qs = '?' + qs;
+    }
+
     return qs;
   }
 
@@ -79,7 +107,9 @@ export class LotrClient {
     const rawData = await fetch(fullPath, {
       headers: headers,
     });
-    const rawResponse = await rawData.json();
+
+    const rawResponse = await retryLoop(() => rawData.json(), 5, `couldn't get JSON from ${fullPath}. Response was ${rawData.status} ${rawData.statusText}`);
+
     const responseItems = rawResponse.docs;
     if (!Array.isArray(responseItems)) {
       throw new Error(`unexpected response from ${fullPath}: ${JSON.stringify(rawResponse)}. Expected docs array`);

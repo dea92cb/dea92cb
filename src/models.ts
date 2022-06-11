@@ -5,6 +5,10 @@ export type Book = {
   name: string;
 }
 
+export type BookChapter = {
+  chapterName: string;
+}
+
 export type Chapter = {
   _id: string;
   chapterName: string;
