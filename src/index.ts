@@ -3,6 +3,8 @@ import fetch from 'cross-fetch';
 import { Book, BookChapter, Chapter, Character, ListQueryOptions, Movie, Quote } from './models';
 import { retryLoop } from './utils';
 
+export * from './models';
+
 export class LotrClient {
   public book = {
     list: (options?: ListQueryOptions<Book>) => this.getList<Book>('/book', options),
